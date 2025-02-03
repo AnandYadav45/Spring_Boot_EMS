@@ -1,6 +1,9 @@
 package com.EMS.Employee_Management_System.config;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -20,9 +23,15 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfiguration.class);
 
-  private final AuthenticationProvider authenticationProvider;
+
+    @Autowired
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+
+    @Autowired
+    private final AuthenticationProvider authenticationProvider;
 
     public SecurityConfiguration(JwtAuthenticationFilter jwtAuthenticationFilter, AuthenticationProvider authenticationProvider) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -32,18 +41,23 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        logger.info("Configuring SecurityFilterChain");
 
         http.csrf(AbstractHttpConfigurer :: disable)
                 .authorizeHttpRequests(
                         request ->
-                                request.requestMatchers("/api/v1/login", "/api/v1/register")
+                                 request.requestMatchers("/api/v1/employee/admin/**", "/api/v1/user/register").hasRole("ADMIN")
+                                        .requestMatchers("/api/v1/public/**")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
+
+
                 .sessionManagement( manager ->
                         manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        logger.info("SecurityFilterChain configuration completed");
         return http.build();
 
     }
@@ -51,16 +65,17 @@ public class SecurityConfiguration {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(){
+        logger.info("Configuring CORS");
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedHeaders(List.of("Authorization","Content-Type"));
         config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE"));
+        config.setAllowedHeaders(List.of("Authorization","Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
+        logger.info("CORS configuration completed");
         return source;
 
 
