@@ -27,6 +27,11 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
+    @GetMapping("/public")
+    public String GetApp(){
+        return "Applixcation is running";
+    }
+
 
     @PostMapping("/public/login")
     public ResponseEntity<String> Login(@RequestBody authRequest user){
